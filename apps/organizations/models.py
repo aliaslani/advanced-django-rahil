@@ -1,20 +1,20 @@
 from django.db import models
 from apps.users.models import User
+from apps.core.models import BaseModel
 # Create your models here.
 
-class PlanChoices(models.Choices):
+class PlanChoices(models.TextChoices):
     free = ('free', 'رایگان')
     pro = ('pro', 'پرو')
     enterprise = ('enterprise', 'شرکتی')
 
 
-class Organization(models.Model):
+class Organization(BaseModel):
     name = models.CharField(max_length=64)
     slug = models.SlugField(unique=True)
-    owner = models.ForeignKey(User, on_delete=models.CASCADE)
-    members = models.ManyToManyField(User, related_name='organizations', through='Membership')
-    created_at = models.DateTimeField(auto_now_add=True)
-    plan = models.CharField(max_length=20, choices=PlanChoices, default=PlanChoices.free)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='organization_owner')
+    members = models.ManyToManyField(User, related_name='organization_members', through='Membership')
+    plan = models.CharField(max_length=20, choices=PlanChoices.choices, default=PlanChoices.free)
 
     class Meta:
         verbose_name = 'سازمان'
@@ -26,7 +26,7 @@ class Organization(models.Model):
 
 
 
-class MemberShip(models.Model):
+class MemberShip(BaseModel):
     ROLE_CHOICES = [
         ('admin', 'ادمین'),
         ('manager', 'مدیر'),
@@ -35,7 +35,7 @@ class MemberShip(models.Model):
 
     ]
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='memberships')
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='viewer')
     joined_at = models.DateTimeField(auto_now_add=True)
 

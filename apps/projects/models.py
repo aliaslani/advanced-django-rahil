@@ -4,13 +4,22 @@ from apps.organizations.models import Organization
 from apps.core.models import BaseModel
 
 
+class Status_Choices(models.TextChoices):
+    PLANNING = ('planning', 'در حال برنامه ریزی')
+    ACTIVE = ('active', 'در دست انجام')
+    ON_HOLD = ('on_hold', 'متوقف')
+    COMPLETED = ('completed', 'انجام شده')
+    ARCHIVED = ('archived', 'آرشیو شده')
+
+
 class Project(BaseModel):
     name = models.CharField(max_length=200)
+    slug = models.SlugField(unique=True)
     description = models.TextField()
-    organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
-    owner = models.ForeignKey(User, on_delete=models.CASCADE)
-    members = models.ManyToManyField(User, related_name='projects', blank=True)
-    status = models.CharField(max_length=200, choices=[('in_progress', 'inprogress'), ('pending', 'pending')], default='pending')
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='projects')
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='project_owner')
+    members = models.ManyToManyField(User, related_name='projectsmembers', blank=True)
+    status = models.CharField(max_length=200, choices=Status_Choices.choices, default=Status_Choices.PLANNING)
     deadline = models.DateTimeField(null=True, blank=True)
 
 
@@ -33,7 +42,7 @@ class Task(BaseModel):
     description = models.TextField(blank=True)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='tasks')
     assignee = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='tasks')
-    reporter = models.ForeignKey(User, on_delete=models.PROTECT, null=True, blank=True, related_name='reports')
+    reporter = models.ForeignKey(User, on_delete=models.PROTECT, null=True, blank=True, related_name='tasks_reporter')
     priority = models.IntegerField(default=0, choices=PRIORITY_CHOICES)
     is_done = models.BooleanField(default=False)
     due_date = models.DateTimeField(null=True, blank=True)
@@ -47,7 +56,7 @@ class Task(BaseModel):
         return self.title
 
 class Comment(BaseModel):
-    task = models.ForeignKey(Task, on_delete=models.CASCADE)
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='comments')
     author = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='comments')
     body = models.TextField()
 

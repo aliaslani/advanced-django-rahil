@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import authenticate
+from apps.users.models import User
 
 
 
@@ -27,4 +28,21 @@ class LoginSerializer(serializers.Serializer):
             raise serializers.ValidationError('User is not active')
         data['user'] = user
         return data
+
+
+
+
+class UserBriefSerializer(serializers.ModelSerializer):
+    full_name = serializers.SerializerMethodField()
+    class Meta:
+        model = User
+        fields = [
+            'id', 'username','email', 'full_name', 'avatar',
+        ]
+        read_only_fields = [
+            'id', 'email'
+        ]
+
+    def get_full_name(self, object):
+        return f'{object.first_name} {object.last_name}'
 

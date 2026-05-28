@@ -27,8 +27,15 @@ SECRET_KEY = 'django-insecure-28c&(+g+(13l&u*szg+=+)=6net=_1cyn_&)ty&(73*qi1==$v
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['127.0.0.1']
 
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+'rest_framework.authentication.SessionAuthentication',
+    'rest_framework.authentication.BasicAuthentication'
+    ),
+    'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.IsAuthenticated',),
+}
 
 # Application definition
 
@@ -45,6 +52,7 @@ INSTALLED_APPS = [
     'apps.core',
     'rest_framework',
     "debug_toolbar",
+    "apps.article",
 ]
 
 MIDDLEWARE = [

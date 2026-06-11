@@ -34,10 +34,7 @@ class ArticleSerializer(ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        tags_data = validated_data.pop('tags')
-        author = self.context['request'].user
-        validated_data['author'] = author
-
+        tags_data = validated_data.pop('tags',None)
         new_article = Article.objects.create(**validated_data)
         tags_d = []
         for tag in tags_data:
@@ -51,8 +48,7 @@ class ArticleSerializer(ModelSerializer):
 
 
     def update(self, instance, validated_data):
-        tags_data = validated_data.pop('tags')
-        author = self.context['request'].user
+        tags_data = validated_data.pop('tags', None)
         instance.title = validated_data.get('title', instance.title)
         instance.body = validated_data.get('body', instance.body)
         instance.is_published = validated_data.get('is_published', instance.is_published)
@@ -66,4 +62,9 @@ class ArticleSerializer(ModelSerializer):
 
 
 
+
+class ArticleDetailSerializer(ModelSerializer):
+    tags = TagSerializer(many=True)
+    class Meta:
+        model = Article
 

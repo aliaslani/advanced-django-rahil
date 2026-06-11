@@ -16,4 +16,3 @@ class Article(BaseModel):
 
     def __str__(self):
         return self.title
-

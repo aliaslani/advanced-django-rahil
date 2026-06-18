@@ -10,9 +10,14 @@ from rest_framework import generics
 from apps.article.permissions import ArticleOwnerPermission
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import action
+from django.core.cache import cache
+from django.views.decorators.cache import  cache_page
+from django.utils.decorators import method_decorator
 
 class ArticleListAPIView(APIView):
     permission_classes = [AllowAny]
+
+    @cache_page(60 * 5)
     def get(self, request):
         articles = Article.objects.all()
         serializer = ArticleSerializer(articles, many=True)
@@ -29,7 +34,11 @@ class ArticleDetailAPIView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request, pk):
-        article = get_object_or_404(Article, pk=pk)
+        cache_key = f'article:{pk}-{request.user.id}'
+        article = cache.get(cache_key)
+        if not article:
+            article = get_object_or_404(Article, pk=pk)
+            cache.set(cache_key, article, timeout=5 * 60)
         serializer = ArticleSerializer(article)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -38,6 +47,8 @@ class ArticleDetailAPIView(APIView):
         serializer = ArticleSerializer(article, data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         serializer.save()
+        cache.delete(pk)
+        cache.set(pk, article, timeout=5 * 60)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def patch(self, request, pk):
@@ -45,11 +56,15 @@ class ArticleDetailAPIView(APIView):
         serializer = ArticleSerializer(article, data=request.data, context={'request': request}, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
+        cache.delete(pk)
+        cache.set(pk, article, timeout=5 * 60)
+
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def delete(self, request, pk):
         article = get_object_or_404(Article, pk=pk)
         article.delete()
+        cache.delete(pk)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -58,6 +73,7 @@ class ArticleListCreateView(generics.ListCreateAPIView):
     serializer_class = ArticleSerializer
     pagination_class = None
     def get_queryset(self):
+
         return Article.objects.all()
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
@@ -80,11 +96,10 @@ class ArticleRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView)
     #     serializer.save(author=self.request.user)
 
 
-
+@method_decorator(cache_page(60 * 5), name='dispatch')
 class ArticleViewSet(ModelViewSet):
     queryset = Article.objects.all()
     serializer_class = ArticleSerializer
-    permission_classes = [AllowAny]
 
 
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])

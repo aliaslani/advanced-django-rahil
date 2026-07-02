@@ -13,6 +13,10 @@ from rest_framework.decorators import action
 from django.core.cache import cache
 from django.views.decorators.cache import  cache_page
 from django.utils.decorators import method_decorator
+from django.core.mail import send_mail
+
+from apps.users.models import User
+
 
 class ArticleListAPIView(APIView):
     permission_classes = [AllowAny]
@@ -100,7 +104,6 @@ class ArticleRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView)
 class ArticleViewSet(ModelViewSet):
     queryset = Article.objects.all()
     serializer_class = ArticleSerializer
-
 
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
     def publish(self, request, pk):
